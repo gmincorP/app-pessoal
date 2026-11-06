@@ -1,0 +1,12 @@
+.env
+backend/.env
+.venv/
+__pycache__/
+*.pyc
+logs/
+
+# copias de seguranca feitas a mao (o git substitui)
+*.antes-*
+# dados reais exportados (extrato/contas) -- nao vao pro GitHub
+backend/_gm_*.json
+*.log

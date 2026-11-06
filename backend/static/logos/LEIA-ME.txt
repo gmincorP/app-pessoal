@@ -1,0 +1,3 @@
+Coloque aqui os logos oficiais (baixados do site de cada banco), com estes nomes:
+  nubank.svg   mercadopago.svg   inter.svg   caixa.svg   carteira.svg
+Se o arquivo nao existir, o app mostra o monograma colorido (NU, MP, IN...).
