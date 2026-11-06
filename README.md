@@ -46,6 +46,13 @@ schtasks /Create /TN "AppPessoal-Pluggy" /SC DAILY /ST 06:00 /F /TR "\"C:\AppPes
 - Classificação: regra que você ensinou → de/para da categoria do Pluggy → "Outros".
 - Notificação do celular cria lançamento `PROVISORIO`; o Pluggy confirma no dia seguinte (mesmo valor, conta, ±2 dias), sem duplicar.
 - Toda falha (Pluggy fora, conexão vencida, erro de API) vai pra tabela `notificacoes` (sino).
+- **Para classificar** (`fila.py`, tela `#fila`): gastos pessoais sem categoria ou em "Outros" + notas com item a revisar.
+  Cada um vem com 3 categorias sugeridas e o motivo (pela loja, pela categoria do banco, pelas mais usadas).
+- **Cupom fiscal por item** (`nfce.py` + `fila.py`, tela `#nota-<id>`): o link do QR da NFC-e é lido na SEFAZ,
+  a nota se liga sozinha ao gasto do banco (mesmo valor, até 4 dias) e cada item ganha categoria
+  (código de barras → palavra do cupom → revisão). Nota concluída conta nos potes **por item**
+  (view `lancamentos_efetivos`); o valor continua sendo o do banco, rateado entre os itens.
+  Teste: `python _teste_fila.py` com `PGDATABASE` apontando para um banco de teste.
 
 ## Próximas etapas
 - Roteador WhatsApp (5674 pessoal / 2789 empresa, ponte com o ERP por token)

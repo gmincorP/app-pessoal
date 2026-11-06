@@ -6,6 +6,7 @@ Rotas (todas exigem header X-Token = APP_TOKEN do .env):
   GET   /api/lancamentos?mes=2026-10
   PATCH /api/lancamentos/<id>          -> corrige categoria; {"aprender": true} vira regra
   POST  /api/pluggy/sync               -> roda a sincronizacao agora
+  GET   /api/fila                      -> "Para classificar" (fila.py); POST /api/notas = cupom fiscal por item
   GET   /api/notificacoes              -> sino
 """
 import calendar
@@ -16,6 +17,7 @@ from functools import wraps
 from flask import Flask, jsonify, request, abort, send_from_directory
 
 import db
+import fila
 import pluggy
 from notificar import notificar
 
@@ -28,6 +30,10 @@ try:
     pluggy.aplicar_economia()
 except Exception as _e:
     print("[migrar] falhou:", _e)
+try:
+    fila.migrar()             # cupom fiscal por item (notas, nota_itens, regras) + view lancamentos_efetivos
+except Exception as _e:
+    notificar("Migração das notas fiscais falhou", str(_e))
 
 
 def _token(f):
@@ -38,6 +44,9 @@ def _token(f):
             abort(401)          # no proprio PC (localhost) dispensa o token; celular/VPS exigem
         return f(*a, **k)
     return w
+
+
+fila.registrar(app, _token)   # /api/fila, /api/notas, /api/nota-itens
 
 
 def _mes(s):
@@ -136,7 +145,7 @@ def resumo():
         falta_receber = ag["rec"]
 
     usado = {r["pote"]: float(r["v"]) for r in db.query(
-        """SELECT pote, -sum(valor) v FROM lancamentos WHERE tipo IN ('DESPESA','INVESTIMENTO') AND responsavel='PESSOAL'
+        """SELECT pote, -sum(valor) v FROM lancamentos_efetivos WHERE tipo IN ('DESPESA','INVESTIMENTO') AND responsavel='PESSOAL'
            AND data BETWEEN %s AND %s GROUP BY pote""", (ini, fim))}
     potes = []
     for k, nome, pct in (("NEC", "Necessidades", o["pct_nec"]), ("DES", "Desejos", o["pct_des"]),
@@ -165,12 +174,13 @@ def resumo():
         previsto_det = {"saldo": round(saldo, 2), "falta_receber": round(falta_receber, 2), "fatura": round(fatura, 2),
                         "gasto_diario": round(diario, 2), "dias": (fim - hoje).days, "agendados": round(ag["desp"], 2)}
 
-    cats = db.query("""SELECT c.id, c.nome, c.pote, -sum(l.valor) valor FROM lancamentos l
+    # categorias e potes contam os ITENS da nota fiscal concluida, nao o lancamento inteiro (view do fila.py)
+    cats = db.query("""SELECT c.id, c.nome, c.pote, -sum(l.valor) valor FROM lancamentos_efetivos l
                        JOIN categorias c ON c.id=l.categoria_id
                        WHERE l.tipo='DESPESA' AND l.responsavel='PESSOAL' AND l.data BETWEEN %s AND %s
                        GROUP BY 1,2,3 ORDER BY 4 DESC LIMIT 10""", (ini, fim))
     subs = db.query("""SELECT l.categoria_id, coalesce(s.nome,'Sem subcategoria') nome, -sum(l.valor)::float8 valor
-                       FROM lancamentos l LEFT JOIN subcategorias s ON s.id=l.subcategoria_id
+                       FROM lancamentos_efetivos l LEFT JOIN subcategorias s ON s.id=l.subcategoria_id
                        WHERE l.tipo='DESPESA' AND l.responsavel='PESSOAL' AND l.data BETWEEN %s AND %s GROUP BY 1,2 ORDER BY 3 DESC""", (ini, fim))
     for c in cats:
         c["subcategorias"] = [{"nome": x["nome"], "valor": round(x["valor"], 2)} for x in subs if x["categoria_id"] == c["id"]]
@@ -214,10 +224,13 @@ def lancamentos():
         cond += ["l.categoria_id=%s", "l.responsavel='PESSOAL'"]; par.append(int(a["categoria_id"]))
     if a.get("tipo"):
         cond.append("l.tipo=%s"); par.append(a["tipo"].upper())
+    # filtro por pote/categoria: a compra com nota fiscal concluida aparece ITEM a ITEM (igual aos totais do Inicio)
+    fonte = "lancamentos_efetivos l" if (a.get("pote") or a.get("categoria_id")) else \
+        "(SELECT l0.*, n0.id nota_id FROM lancamentos l0 LEFT JOIN notas n0 ON n0.lancamento_id=l0.id) l"
     return jsonify(db.query(f"""SELECT l.id, to_char(l.data,'YYYY-MM-DD') data, l.descricao, l.valor::float8 valor, l.tipo, l.pote, l.status, l.origem,
                                  c.nome categoria, l.categoria_id, s.nome subcategoria, l.subcategoria_id, ct.banco, ct.nome conta, v.placa,
-                                 ct.tipo conta_tipo, l.cartao_final, l.responsavel
-                               FROM lancamentos l LEFT JOIN categorias c ON c.id=l.categoria_id
+                                 ct.tipo conta_tipo, l.cartao_final, l.responsavel, l.nota_id
+                               FROM {fonte} LEFT JOIN categorias c ON c.id=l.categoria_id
                                LEFT JOIN subcategorias s ON s.id=l.subcategoria_id
                                LEFT JOIN contas ct ON ct.id=l.conta_id LEFT JOIN veiculos v ON v.id=l.veiculo_id
                                WHERE {' AND '.join(cond)} ORDER BY l.data DESC, l.id DESC""", par))  # data como texto: JSON estavel
