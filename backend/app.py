@@ -148,8 +148,9 @@ def resumo():
         """SELECT pote, -sum(valor) v FROM lancamentos_efetivos WHERE tipo IN ('DESPESA','INVESTIMENTO') AND responsavel='PESSOAL'
            AND data BETWEEN %s AND %s GROUP BY pote""", (ini, fim))}
     potes = []
-    for k, nome, pct in (("NEC", "Necessidades", o["pct_nec"]), ("DES", "Desejos", o["pct_des"]),
-                         ("INV", "Investir", o["pct_inv"])):
+    # nomes como o 50/30/20 aparece nos bancos/sites BR (InfoMoney, Nubank): essenciais / estilo de vida / prioridades financeiras
+    for k, nome, pct in (("NEC", "Essenciais", o["pct_nec"]), ("DES", "Estilo de vida", o["pct_des"]),
+                         ("INV", "Prioridades", o["pct_inv"])):
         teto = renda * float(pct) / 100
         potes.append({"pote": k, "nome": nome, "pct": float(pct), "teto": round(teto, 2),
                       "usado": round(usado.get(k, 0), 2)})

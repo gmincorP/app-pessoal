@@ -19,6 +19,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:var(--nec);text-decoration:none}
 .num{font-family:'Space Grotesk',sans-serif}
 .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:84px}
 .top{display:flex;align-items:center;justify-content:space-between;padding:14px 12px 4px;position:sticky;top:0;background:var(--bg);z-index:5}
@@ -154,6 +155,17 @@ a.linha{color:inherit;text-decoration:none}
 .lanc[data-ed],.mov[data-ed]{cursor:pointer}
 .cor-b{width:30px;height:30px;border-radius:15px;border:2px solid transparent;flex-shrink:0}
 .cor-b.on{border-color:#fff;box-shadow:inset 0 0 0 3px var(--card)}
+/* ===== menu lateral (tres barras do Inicio) ===== */
+.gaveta{position:fixed;top:0;bottom:0;left:0;width:min(300px,84vw);background:var(--card2);z-index:31;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));overflow-y:auto;box-shadow:10px 0 30px rgba(0,0,0,.5)}
+.gaveta .sec{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--dim);padding:16px 12px 6px;text-transform:uppercase}
+.gaveta a,.gaveta button.it{display:flex;align-items:center;gap:14px;min-height:50px;padding:0 12px;border-radius:14px;color:var(--txt);text-decoration:none;font-size:15px;width:100%;text-align:left}
+.gaveta a:hover,.gaveta button.it:hover{background:var(--card)}
+.gaveta .ic2{width:24px;display:flex;justify-content:center;color:var(--mut);flex-shrink:0}
+.gaveta .cont{margin-left:auto;font-size:12px;font-weight:700;background:var(--alerta-bg);color:var(--alerta);border-radius:10px;padding:2px 8px}
+.grp-pote{display:flex;flex-direction:column;gap:2px;padding:14px 4px 2px}
+.grp-pote .t{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.grp-pote b{font-size:16px;display:flex;align-items:center;gap:8px}
+.grp-pote small{font-size:12px;color:var(--mut)}
 /* ===== fila "Para classificar" + itens da nota fiscal ===== */
 .fl-chip{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--card2);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:8px;text-align:left}
 .fl-chip i{width:8px;height:8px;border-radius:4px;flex-shrink:0}
@@ -284,7 +296,7 @@ function render(d, lancs, fc){
   document.getElementById("raiz").innerHTML = `
   <div class="app">
     <div class="top">
-      <a class="icon" href="#categorias" aria-label="Categorias" style="color:var(--txt)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></a>
+      <button class="icon" id="menu" aria-label="Abrir menu" aria-haspopup="dialog" style="color:var(--txt)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div style="display:flex;align-items:center;gap:4px">
         <button class="icon" id="ant" aria-label="Mês anterior"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg></button>
         <button class="mes" id="mesHoje" aria-label="Voltar para o mês atual"><b>${nomeMes}</b><small style="${ehMesAtual()?"":"color:var(--nec)"}">${ehMesAtual()?status:status+" · ↺ mês atual"}</small></button>
@@ -321,6 +333,7 @@ function render(d, lancs, fc){
   document.getElementById("ant").onclick = ()=>{ mesAtual=new Date(mesAtual.getFullYear(),mesAtual.getMonth()-1,1); carregar(); };
   document.getElementById("prox").onclick = ()=>{ mesAtual=new Date(mesAtual.getFullYear(),mesAtual.getMonth()+1,1); carregar(); };
   document.getElementById("sync").onclick = sincronizar;
+  document.getElementById("menu").onclick = ()=>abrirMenu(fc&&fc.total);
   ligarEdicao();
   document.getElementById("mesHoje").onclick=()=>{ if(ehMesAtual()) return; const h=new Date(); mesAtual=new Date(h.getFullYear(),h.getMonth(),1); carregar(); };
   if(document.getElementById("prevBtn")) document.getElementById("prevBtn").onclick=()=>abrirPrevisto(d);
@@ -713,7 +726,7 @@ function renderForm(){
     <small style="color:var(--mut)">${F.rec==="FIXA"?`Cria as próximas ${qtdFixa} ocorrências como pendentes — cada uma liga sozinha ao extrato quando o banco trouxer.`
       :`O valor acima é de <b>cada parcela</b>. A 1ª ${F.cartao?"entra no cartão":"segue o “Efetivada”"}; as demais ficam pendentes e ligam sozinhas ao extrato.`}</small></div>`;
   const novaCat = F.novaCat?`<div class="sub-in"><input id="fNovaNome" placeholder="Nome da nova categoria" value="${esc(F.novaNome)}">
-      ${F.nat==="DESPESA"?`<select id="fNovaPote" aria-label="Pote 50/30/20" style="flex-grow:0;min-width:0"><option value="NEC" ${F.novaPote==="NEC"?"selected":""}>Necessidade 50%</option><option value="DES" ${F.novaPote==="DES"?"selected":""}>Desejo 30%</option><option value="INV" ${F.novaPote==="INV"?"selected":""}>Investimento 20%</option></select>`:""}
+      ${F.nat==="DESPESA"?`<select id="fNovaPote" aria-label="Pote 50/30/20" style="flex-grow:0;min-width:0">${["NEC","DES","INV"].map(p=>`<option value="${p}" ${F.novaPote===p?"selected":""}>${POTE_CURTO[p]} ${POTE_PCT[p]}%</option>`).join("")}</select>`:""}
       <button id="addCat">Adicionar</button></div>`:"";
   const novaSub = F.novaSub?`<div class="sub-in"><input id="fNovaNome" placeholder="Nova subcategoria de ${esc(cat?cat.nome:"")}" value="${esc(F.novaNome)}"><button id="addSub">Adicionar</button></div>`:"";
   const fat = F.cartao ? faturaDaCompra() : null;
@@ -833,7 +846,13 @@ async function salvarForm(){
 }
 
 // ===================== DETALHAMENTO (tudo no Início abre o que está por trás) =====================
-const POTE_NOME={NEC:"Necessidades",DES:"Desejos",INV:"Investir"};
+// Nomes dos potes do 50/30/20 -- os termos mais usados no Brasil (InfoMoney/Nubank): mude so aqui e no app.py
+const POTE_NOME={NEC:"Essenciais",DES:"Estilo de vida",INV:"Prioridades financeiras"};
+const POTE_CURTO={NEC:"Essenciais",DES:"Estilo de vida",INV:"Prioridades"};   // telas apertadas (Início, selos)
+const POTE_PCT={NEC:50,DES:30,INV:20};
+const POTE_DICA={NEC:"contas fixas e o que não dá para cortar: moradia, mercado, saúde, transporte",
+                 DES:"o que dá para cortar se apertar: restaurante, lazer, compras, assinaturas",
+                 INV:"o seu futuro: investimentos, reserva de emergência, quitar dívidas"};
 let PT=null, CT=null, IV=null;
 const ehMesAtual=()=>{ const h=new Date(); return mesAtual.getFullYear()===h.getFullYear() && mesAtual.getMonth()===h.getMonth(); };
 function mesTitulo(){
@@ -866,7 +885,7 @@ function listaLanc(itens){
   return out;
 }
 
-// ---------- pote (Necessidades / Desejos / Investir) -> categorias ----------
+// ---------- pote (Essenciais / Estilo de vida / Prioridades financeiras) -> categorias ----------
 async function telaPote(p){
   esqueleto();
   let r,l; try{ [r,l]=await Promise.all([api("/api/resumo?mes="+ym(mesAtual)), api(`/api/lancamentos?mes=${ym(mesAtual)}&pote=${p}`)]); }catch(e){ return; }
@@ -965,7 +984,7 @@ function renderInvest(){
     ${topoVoltar("Investimentos","aplicações e resgates")}
     ${barraMes()}
     <div style="text-align:center;padding:4px 16px 0">
-      <div style="font-size:12px;color:var(--mut)">Economia do mês (conta no pote Investir)</div>
+      <div style="font-size:12px;color:var(--mut)">Economia do mês (conta em Prioridades financeiras)</div>
       <div class="num" style="font-size:32px;font-weight:700;color:${d.liquido<0?"var(--des)":"var(--inv)"}">${brl(d.liquido)}</div>
       <div style="display:flex;justify-content:center;gap:8px;margin-top:6px;flex-wrap:wrap">
         <span class="chip">aplicado <b class="num" style="color:var(--inv)">${brl0(d.aplicado)}</b></span><span class="chip">resgatado <b class="num" style="color:var(--des)">${brl0(d.resgatado)}</b></span></div>
@@ -1018,7 +1037,7 @@ function abrirCaixinha(c, alocar, bancoFixo){
       <label for="cxS">Saldo HOJE nela</label><input id="cxS" inputmode="decimal" placeholder="0,00">`:""}
       <label for="cxM">Meta (opcional)</label><input id="cxM" inputmode="decimal" placeholder="0,00" value="${c&&c.meta?String(c.meta).replace(".",","):""}">
       <div class="campo" style="padding:6px 0;border:0"><div class="c"><span style="font-size:15px">Conta como economia minha</span>
-        <span style="font-size:12px;color:var(--mut)">Desligado: aparece aqui em Investimentos, mas as aplicações e resgates não entram no pote Investir nem no "Investido no mês" (ex.: aluguel de terceiro que você só guarda).</span></div>
+        <span style="font-size:12px;color:var(--mut)">Desligado: aparece aqui em Investimentos, mas as aplicações e resgates não entram em Prioridades financeiras nem no "Investido no mês" (ex.: aluguel de terceiro que você só guarda).</span></div>
         <label class="sw" style="--cor-f:var(--inv)"><input type="checkbox" id="cxE" ${!c||c.economia?"checked":""}><span></span></label></div>
       <div id="cxErro" class="erro"></div>
       <div class="grade2"><button class="btn sec" id="cxCancelar">Cancelar</button><button class="btn pri" id="cxSalvar">Salvar</button></div>
@@ -1420,7 +1439,7 @@ async function salvarCartao(){
 
 // ===================== CATEGORIA / SUBCATEGORIA EM TODO O APP =====================
 let CATS_ALL=null, ED={}, S=null, INICIO=null, catAberta=null, CG=null;
-const POTE_COR={NEC:["#1C2A42","var(--nec)","Necessidade"],DES:["#3A2E1A","var(--des)","Desejo"],INV:["#13261C","var(--inv)","Investimento"],NENHUM:["#1E3A2C","var(--rec)",""]};
+const POTE_COR={NEC:["#1C2A42","var(--nec)",POTE_CURTO.NEC],DES:["#3A2E1A","var(--des)",POTE_CURTO.DES],INV:["#13261C","var(--inv)",POTE_CURTO.INV],NENHUM:["#1E3A2C","var(--rec)",""]};
 const NAT_ROT={DESPESA:"Despesas",RECEITA:"Receitas",TRANSFERENCIA:"Transferências e faturas"};
 const CATS_SIS=["Outros","Pagamento de fatura","Transferência entre contas","Gasto da GM (reembolsável)","Salário / renda","Outras receitas"];
 const catTxt = x => x.categoria ? x.categoria+(x.subcategoria?" › "+x.subcategoria:"") : "";
@@ -1508,7 +1527,7 @@ async function salvarSheet(){
 // ===================== PARA CLASSIFICAR (fila) + NOTA FISCAL POR ITEM =====================
 // Backend: fila.py. A fila = gastos do banco sem categoria/"Outros" + notas com item a revisar.
 let FL=null, NT=null;
-const poteBadge = p => { const c=POTE_COR[p]||POTE_COR.NENHUM; return `<span class="pote-b" style="background:${c[0]};color:${c[1]}">${p==="NEC"?"NEC":p==="DES"?"DES":p==="INV"?"INV":"—"}</span>`; };
+const poteBadge = p => { const c=POTE_COR[p]||POTE_COR.NENHUM; return `<span class="pote-b" style="background:${c[0]};color:${c[1]}">${POTE_CURTO[p]||"—"}</span>`; };
 const catNome = x => x.categoria+(x.subcategoria?" › "+x.subcategoria:"");
 
 async function telaFila(){
@@ -1617,7 +1636,7 @@ function renderNota(){
       <span style="font-size:15px">${esc(n.emitente||"Nota fiscal")}</span><small style="font-size:12px;color:var(--mut)">${quando} · ${lanc}</small></div>
       <b class="num" style="font-size:17px;white-space:nowrap">${brl(n.lanc_valor!=null?Math.abs(n.lanc_valor):n.total)}</b></div>
     <div class="bar3" aria-hidden="true"><i style="width:${pc(n.potes.NEC)}%;background:var(--nec)"></i><i style="width:${pc(n.potes.DES)}%;background:var(--des)"></i><i style="width:${pc(n.potes.INV)}%;background:var(--inv)"></i></div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#C9C8C2">${leg("var(--nec)","Necessidade",n.potes.NEC)}${leg("var(--des)","Desejo",n.potes.DES)}${n.potes.INV?leg("var(--inv)","Investir",n.potes.INV):""}${n.potes.PEND?leg("var(--dim)","Pendente",n.potes.PEND):""}</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#C9C8C2">${leg("var(--nec)",POTE_CURTO.NEC,n.potes.NEC)}${leg("var(--des)",POTE_CURTO.DES,n.potes.DES)}${n.potes.INV?leg("var(--inv)",POTE_CURTO.INV,n.potes.INV):""}${n.potes.PEND?leg("var(--dim)","Pendente",n.potes.PEND):""}</div>
     ${n.desconto?`<small style="font-size:12px;color:var(--mut)">Desconto de ${brl(n.desconto)} rateado entre os itens.</small>`:""}</section>`;
   const cartPend=pend.map(i=>{
     const lem = NT.lem[i.id]!==undefined ? NT.lem[i.id] : !i.perguntar;
@@ -1724,14 +1743,14 @@ function renderCategorias(){
         <button class="mini-b" data-sgsal="${s.id}">Salvar</button>
         <button class="mini-b" data-sgdel="${s.id}" style="${CG.confirmar==="s"+s.id?"color:var(--desp);border-color:var(--desp)":""}">${CG.confirmar==="s"+s.id?"Confirmar":"Excluir"}</button></div>`).join("");
     return `<section class="card" style="padding:0;overflow:hidden">
-      <button class="banco-h" data-cg="${c.id}"><div class="mini" style="background:${pc[0]};color:${pc[1]};width:36px;height:36px;border-radius:11px">${esc(c.natureza==="DESPESA"?c.pote:c.nome.slice(0,2).toUpperCase())}</div>
+      <button class="banco-h" data-cg="${c.id}"><div class="mini" style="background:${pc[0]};color:${pc[1]};width:36px;height:36px;border-radius:11px">${esc(c.nome.slice(0,2).toUpperCase())}</div>
         <div style="flex-grow:1;display:flex;flex-direction:column;min-width:0"><b style="font-size:15px">${esc(c.nome)}</b>
           <small style="color:var(--mut);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.uso} lançamento(s) · ${c.subcategorias.length?c.subcategorias.map(s=>esc(s.nome)).join(", "):"sem subcategorias"}</small></div>
         <span style="color:var(--mut);width:14px">${ab?"▾":"▸"}</span></button>
       ${ab?`<div class="form" style="border-top:1px solid var(--line);padding:14px 16px 16px">
         <label for="cgNome">Nome</label><input id="cgNome" value="${esc(c.nome)}" ${sis?"disabled":""}>
         ${sis?`<small style="color:var(--mut)">Categoria usada pelo app: dá para mudar as subcategorias${c.natureza==="DESPESA"?" e o pote":""}, não o nome.</small>`:""}
-        ${c.natureza==="DESPESA"?`<label>Pote na regra 50/30/20</label><div class="seg" style="align-self:flex-start">${["NEC","DES","INV"].map(p=>`<button class="${c.pote===p?"on":""}" data-pote="${p}">${POTE_COR[p][2]}</button>`).join("")}</div>`:""}
+        ${c.natureza==="DESPESA"?`<label>Grupo na regra 50/30/20</label><div class="seg" style="align-self:flex-start;flex-wrap:wrap">${["NEC","DES","INV"].map(p=>`<button class="${c.pote===p?"on":""}" data-pote="${p}">${POTE_NOME[p]}</button>`).join("")}</div>`:""}
         <label style="margin-top:6px">Subcategorias</label>${subs||'<small style="color:var(--mut)">Nenhuma ainda.</small>'}
         <div class="parte"><input id="sgNova" placeholder="Nova subcategoria" style="flex:1 1 auto;text-align:left"><button class="mini-b" id="sgAdd" style="color:var(--inv);border-color:var(--inv)">Adicionar</button></div>
         <div class="grade2" style="margin-top:8px">${sis?"<span></span>":`<button class="btn sec" id="cgDel" style="${CG.confirmar==="c"+c.id?"color:var(--desp);border-color:var(--desp)":""}">${CG.confirmar==="c"+c.id?(c.uso?"Confirmar arquivar":"Confirmar excluir"):(c.uso?"Arquivar":"Excluir")}</button>`}
@@ -1739,15 +1758,22 @@ function renderCategorias(){
       </div>`:""}</section>`;
   };
   document.getElementById("raiz").innerHTML=`<div class="app">
-    <div class="top"><a class="icon" href="#inicio" aria-label="Voltar" style="color:var(--txt)">${SVG.voltar}</a><div class="mes"><b>Categorias</b><small>e subcategorias</small></div><span style="width:44px"></span></div>
+    <div class="top"><a class="icon" href="#inicio" aria-label="Voltar" style="color:var(--txt)">${SVG.voltar}</a><div class="mes"><b>Categorias</b><small>agrupadas pela regra 50/30/20</small></div><span style="width:44px"></span></div>
     <div style="padding:6px 16px 0"><div class="seg">${[["DESPESA","Despesas"],["RECEITA","Receitas"],["TRANSFERENCIA","Transferências"]].map(([k,t])=>`<button class="${CG.nat===k?"on":""}" data-nat="${k}" style="flex:1">${t}</button>`).join("")}</div>
-      ${CG.nat==="DESPESA"?`<small style="display:block;color:var(--mut);font-size:12px;margin-top:8px">O pote define onde a despesa conta no 50/30/20. Trocar o pote reclassifica as despesas já lançadas.</small>`:""}</div>
+      ${CG.nat==="DESPESA"?`<small style="display:block;color:var(--mut);font-size:12px;margin-top:8px">Cada categoria fica num dos 3 grupos da regra 50/30/20. Mudar o grupo reclassifica as despesas já lançadas.</small>`:""}</div>
     <div class="cards">
       ${CG.erro?`<div class="alerta" style="margin:0;background:#3D2023;color:#FFB4AE">${esc(CG.erro)}</div>`:""}
-      ${ativas.map(card).join("")||'<div class="vazio">Nenhuma categoria.</div>'}
+      ${CG.nat==="DESPESA" ? ["NEC","DES","INV","OUTRO"].map(p=>{
+          const cs=ativas.filter(c=>p==="OUTRO"?!POTE_NOME[c.pote]:c.pote===p); if(p==="OUTRO"&&!cs.length) return "";
+          const usos=cs.reduce((a,c)=>a+(+c.uso||0),0);
+          return `<div class="grp-pote"><div class="t"><b>${p==="OUTRO"?"Sem grupo":`<i style="width:10px;height:10px;border-radius:5px;background:${COR[p]}"></i>${POTE_NOME[p]} <span class="num" style="color:var(--mut);font-weight:500">${POTE_PCT[p]}%</span>`}</b>
+              ${p!=="OUTRO"?`<button class="mini-b" data-ncpote="${p}">+ nova</button>`:""}</div>
+            <small>${p==="OUTRO"?"categorias de despesa fora do 50/30/20":POTE_DICA[p]} · ${cs.length} categoria(s), ${usos} lançamento(s)</small></div>
+            ${cs.map(card).join("")||`<div class="vazio" style="padding:0 6px">Nenhuma categoria neste grupo.</div>`}`; }).join("")
+        : (ativas.map(card).join("")||'<div class="vazio">Nenhuma categoria.</div>')}
       ${CG.nat!=="TRANSFERENCIA"?(CG.nova?`<section class="card form"><h2>Nova categoria de ${CG.nat==="DESPESA"?"despesa":"receita"}</h2>
           <label for="ncNome">Nome</label><input id="ncNome" placeholder="${CG.nat==="DESPESA"?"Ex.: Pets":"Ex.: Aluguéis recebidos"}">
-          ${CG.nat==="DESPESA"?`<label for="ncPote">Pote</label><select id="ncPote">${["NEC","DES","INV"].map(p=>`<option value="${p}" ${p==="DES"?"selected":""}>${POTE_COR[p][2]}</option>`).join("")}</select>`:""}
+          ${CG.nat==="DESPESA"?`<label for="ncPote">Grupo na regra 50/30/20</label><select id="ncPote">${["NEC","DES","INV"].map(p=>`<option value="${p}" ${p===(CG.novaPote||"DES")?"selected":""}>${POTE_NOME[p]} ${POTE_PCT[p]}%</option>`).join("")}</select>`:""}
           <div class="grade2" style="margin-top:6px"><button class="btn sec" id="ncCancelar">Cancelar</button><button class="btn pri" id="ncSalvar">Criar</button></div></section>`
         :`<button class="btn sec" id="ncAbrir">+ Nova categoria</button>`):""}
       ${arq.length?`<h2 style="font-size:14px;color:var(--mut);margin:10px 4px 0">Arquivadas</h2>${arq.map(c=>`<div class="linha" style="padding:0 6px"><div class="nm" style="color:var(--mut)">${esc(c.nome)}<small>${c.uso} lançamento(s) no histórico</small></div><button class="mini-b" data-reativar="${c.id}">Reativar</button></div>`).join("")}`:""}
@@ -1766,7 +1792,8 @@ function renderCategorias(){
   if(q("cgDel")) q("cgDel").onclick=async()=>{ const k="c"+c.id; if(CG.confirmar!==k){ CG.confirmar=k; return renderCategorias(); }
     const r=await del(`/api/categorias/${c.id}`); if(!r.ok){ CG.erro=r.erro||"Não consegui"; return renderCategorias(); }
     CG.aberta=null; await recarregarCG(r.arquivada?"Categoria arquivada (histórico mantido)":"Categoria excluída"); };
-  if(q("ncAbrir")) q("ncAbrir").onclick=()=>{ CG.nova=true; renderCategorias(); q("ncNome").focus(); };
+  if(q("ncAbrir")) q("ncAbrir").onclick=()=>{ CG.nova=true; CG.novaPote=null; renderCategorias(); q("ncNome").focus(); };
+  document.querySelectorAll("[data-ncpote]").forEach(b=>b.onclick=()=>{ CG.nova=true; CG.novaPote=b.dataset.ncpote; renderCategorias(); q("ncNome").focus(); q("ncNome").scrollIntoView({block:"center"}); });
   if(q("ncCancelar")) q("ncCancelar").onclick=()=>{ CG.nova=false; renderCategorias(); };
   if(q("ncSalvar")) q("ncSalvar").onclick=async()=>{ const n=q("ncNome").value.trim(); if(!n) return;
     const r=await post("/api/categorias",{nome:n, natureza:CG.nat, pote:q("ncPote")?q("ncPote").value:"NENHUM"});
@@ -1774,8 +1801,39 @@ function renderCategorias(){
     CG.nova=false; CG.aberta=r.id; await recarregarCG("Categoria criada"); };
 }
 
+// ---------- menu lateral (tres barras do Inicio) ----------
+function abrirMenu(nFila){
+  let el=document.getElementById("gaveta"); if(!el){ el=document.createElement("div"); el.id="gaveta"; document.body.appendChild(el); }
+  const it=(href,ico,txt,extra)=>`<a href="${href}"><span class="ic2">${ico}</span>${txt}${extra||""}</a>`;
+  const icoSync='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>';
+  el.innerHTML=`<div class="veu" style="z-index:30" id="gvVeu"></div>
+  <div class="gaveta" role="dialog" aria-label="Menu">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 4px 12px"><b class="num" style="font-size:19px">Minhas contas</b>
+      <button class="icon" id="gvFechar" aria-label="Fechar menu">${SVG.fechar}</button></div>
+    <div class="sec">Organizar</div>
+    ${it("#categorias",SVG.tag,"Categorias")}
+    ${it("#fila",SVG.cupom,"Para classificar",nFila?`<span class="cont">${nFila}</span>`:"")}
+    <div class="sec">Dinheiro</div>
+    ${it("#contas",SVG.conta,"Contas e caixinhas")}
+    ${it("#cartoes",SVG.cartao,"Cartões de crédito")}
+    ${it("#investimentos",SVG.camadas,"Investimentos")}
+    ${it("#receitas",SVG.maisP,"Receitas")}
+    ${it("#despesas",SVG.menos,"Despesas")}
+    <div class="sec">Sistema</div>
+    <button class="it" id="gvSync"><span class="ic2">${icoSync}</span>Sincronizar bancos agora</button>
+    <button class="it" id="gvToken"><span class="ic2">${SVG.texto}</span>Trocar token de acesso</button>
+  </div>`;
+  const q=id=>document.getElementById(id);
+  q("gvVeu").onclick=fecharMenu; q("gvFechar").onclick=fecharMenu;
+  el.querySelectorAll("a").forEach(a=>a.onclick=()=>{ if(a.getAttribute("href")===location.hash) fecharMenu(); });
+  q("gvSync").onclick=()=>{ fecharMenu(); if(document.getElementById("sync")) sincronizar(); else location.hash="#inicio"; };
+  q("gvToken").onclick=()=>{ fecharMenu(); pedirToken(""); };
+  q("gvFechar").focus();
+}
+function fecharMenu(){ const x=document.getElementById("gaveta"); if(x) x.remove(); }
+
 function rota(){
-  fecharSheet();
+  fecharSheet(); fecharMenu();
   rotaAnterior=rotaAtual; rotaAtual=location.hash||"#inicio";
   const h=rotaAtual.slice(1);
   if(h==="cartoes") telaCartoesLista();
