@@ -54,6 +54,17 @@ schtasks /Create /TN "AppPessoal-Pluggy" /SC DAILY /ST 06:00 /F /TR "\"C:\AppPes
   (view `lancamentos_efetivos`); o valor continua sendo o do banco, rateado entre os itens.
   Teste: `python _teste_fila.py` com `PGDATABASE` apontando para um banco de teste.
 
+## Onde roda (desde 24/11/2026)
+Na **VPS**, junto com o CRM: pasta `C:\AppPessoal`, serviço Windows **AppPessoal** (nssm, porta 5100,
+firewall só Tailscale) e banco `app_pessoal` no PostgreSQL 18 da VPS.
+Acesso: `http://100.89.98.127:5100` (Tailscale). Logs em `C:\AppPessoal\logs\`.
+- **Pluggy:** tarefa agendada `AppPessoal-Pluggy` (SYSTEM), todo dia às 06:00 → `logs\pluggy.log`.
+- **Atualização:** tarefa `AppPessoal-AutoDeploy` a cada 5 min roda `ops\autodeploy.ps1`: se o `main` do
+  GitHub mudou, faz pull, confere a sintaxe e reinicia o serviço; se não subir, volta a versão e avisa no sino.
+  Ou seja: **código novo = push no `main`**, e em até 5 min está no ar.
+- A cópia do PC (`C:\Sistemas claude\app-pessoal`) virou só o clone de desenvolvimento; o banco local
+  ficou como backup de 24/11 e não é mais atualizado.
+
 ## Próximas etapas
 - Roteador WhatsApp (5674 pessoal / 2789 empresa, ponte com o ERP por token)
 - Leitor de notificações no app Android (tempo real)
